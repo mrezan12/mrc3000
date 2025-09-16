@@ -7,7 +7,7 @@ class WordsRepository {
 
   Future<List<Word>> loadAll() async {
     if (_cache != null) return _cache!;
-    final raw = await rootBundle.loadString('assets/oxford3000_words.json');
+    final raw = await rootBundle.loadString('assets/oxford3000_words_tr.json');
     final List list = jsonDecode(raw) as List;
     _cache = list.map((e) => Word.fromMap(e as Map<String, dynamic>)).toList();
     return _cache!;
