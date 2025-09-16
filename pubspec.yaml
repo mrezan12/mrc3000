@@ -19,4 +19,4 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/oxford3000_words.json
+    - assets/oxford3000_words_tr.json
