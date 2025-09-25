@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'screens/flashcard_screen.dart';
 import 'screens/review_screen.dart';
+import 'screens/level_selection_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +26,7 @@ class FlashcardsApp extends StatelessWidget {
         '/': (_) => const HomeScreen(),
         '/study': (_) => const FlashcardScreen(),
         '/review': (_) => const ReviewScreen(),
+        '/level-selection': (_) => const LevelSelectionScreen(),
       },
     );
   }
