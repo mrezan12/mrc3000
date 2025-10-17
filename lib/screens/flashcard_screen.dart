@@ -21,6 +21,9 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
   int _index = 0;
   bool _flipped = false;
   Set<int> _repeatSet = {};
+  bool _isLoading = true;
+  String? _error;
+  bool _didReadArgs = false;
   
   // Mod parametreleri
   String _mode = 'sequential';
@@ -30,29 +33,46 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
   @override
   void initState() {
     super.initState();
-    _init();
   }
 
-  Future<void> _init() async {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didReadArgs) return;
+    _didReadArgs = true;
+
     // Route arguments'ı al
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     _mode = args?['mode'] ?? 'sequential';
     _level = args?['level'];
-    
+
     // Mod başlığını belirle
     _setModeTitle();
-    
-    // Kelimeleri yükle
-    final loaded = await _repo.loadAll();
-    final repeat = await _storage.loadRepeatSet();
-    
+
+    // Veriyi yükle
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
     setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final loaded = await _repo.loadAll();
+      final repeat = await _storage.loadRepeatSet();
       _allWords = loaded;
       _repeatSet = repeat;
-    });
-    
-    // Kelimeleri filtrele ve hazırla
-    _prepareWords();
+      _prepareWords();
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
   }
 
   void _setModeTitle() {
@@ -147,7 +167,7 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_filteredWords.isEmpty) {
+    if (_isLoading) {
       return Scaffold(
         appBar: AppBar(title: Text(_modeTitle)),
         body: Center(
@@ -175,6 +195,40 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
               ],
             ],
           ),
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        appBar: AppBar(title: Text(_modeTitle)),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Bir hata oluştu', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).hintColor)),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: _loadData,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Tekrar Dene'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_filteredWords.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: Text(_modeTitle)),
+        body: const Center(
+          child: Text('Bu mod için gösterilecek kelime bulunamadı.'),
         ),
       );
     }

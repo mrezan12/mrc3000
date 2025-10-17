@@ -33,70 +33,64 @@ class LevelSelectionScreen extends StatelessWidget {
             
             // Seviye kartları
             Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.2,
+              child: Column(
                 children: [
-                  // A1 Seviyesi
-                  _buildLevelCard(
-                    context: context,
-                    level: 'A1',
-                    title: 'Başlangıç',
-                    description: 'Temel kelimeler',
-                    color: Colors.green,
-                    onTap: () => _navigateToStudy(context, 'A1'),
+                  // İlk satır
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildLevelCard(
+                            context: context,
+                            level: 'A1',
+                            title: 'Başlangıç',
+                            description: 'Temel kelimeler',
+                            color: Colors.green,
+                            onTap: () => _navigateToStudy(context, 'A1'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildLevelCard(
+                            context: context,
+                            level: 'A2',
+                            title: 'Temel',
+                            description: 'Günlük kelimeler',
+                            color: Colors.lightGreen,
+                            onTap: () => _navigateToStudy(context, 'A2'),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  
-                  // A2 Seviyesi
-                  _buildLevelCard(
-                    context: context,
-                    level: 'A2',
-                    title: 'Temel',
-                    description: 'Günlük kelimeler',
-                    color: Colors.lightGreen,
-                    onTap: () => _navigateToStudy(context, 'A2'),
-                  ),
-                  
-                  // B1 Seviyesi
-                  _buildLevelCard(
-                    context: context,
-                    level: 'B1',
-                    title: 'Orta',
-                    description: 'İş ve sosyal',
-                    color: Colors.orange,
-                    onTap: () => _navigateToStudy(context, 'B1'),
-                  ),
-                  
-                  // B2 Seviyesi
-                  _buildLevelCard(
-                    context: context,
-                    level: 'B2',
-                    title: 'Orta Üst',
-                    description: 'Akademik temel',
-                    color: Colors.deepOrange,
-                    onTap: () => _navigateToStudy(context, 'B2'),
-                  ),
-                  
-                  // C1 Seviyesi
-                  _buildLevelCard(
-                    context: context,
-                    level: 'C1',
-                    title: 'İleri',
-                    description: 'Akademik ileri',
-                    color: Colors.red,
-                    onTap: () => _navigateToStudy(context, 'C1'),
-                  ),
-                  
-                  // C2 Seviyesi
-                  _buildLevelCard(
-                    context: context,
-                    level: 'C2',
-                    title: 'Uzman',
-                    description: 'Profesyonel',
-                    color: Colors.deepPurple,
-                    onTap: () => _navigateToStudy(context, 'C2'),
+                  const SizedBox(height: 12),
+                  // İkinci satır
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildLevelCard(
+                            context: context,
+                            level: 'B1',
+                            title: 'Orta',
+                            description: 'İş ve sosyal',
+                            color: Colors.orange,
+                            onTap: () => _navigateToStudy(context, 'B1'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildLevelCard(
+                            context: context,
+                            level: 'B2',
+                            title: 'Orta Üst',
+                            description: 'Akademik temel',
+                            color: Colors.deepOrange,
+                            onTap: () => _navigateToStudy(context, 'B2'),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -168,27 +162,35 @@ class LevelSelectionScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               
               // Başlık
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+              Flexible(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 4),
               
               // Açıklama
-              Text(
-                description,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(context).hintColor,
+              Flexible(
+                child: Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).hintColor,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                textAlign: TextAlign.center,
               ),
             ],
           ),
