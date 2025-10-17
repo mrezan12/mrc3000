@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../data/words_repository.dart';
 import '../models/word.dart';
@@ -15,31 +16,117 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
   final _repo = WordsRepository();
   final _storage = StorageService();
 
-  List<Word> _words = const [];
+  List<Word> _allWords = const [];
+  List<Word> _filteredWords = const [];
   int _index = 0;
   bool _flipped = false;
   Set<int> _repeatSet = {};
+  bool _isLoading = true;
+  String? _error;
+  bool _didReadArgs = false;
+  
+  // Mod parametreleri
+  String _mode = 'sequential';
+  String? _level;
+  String _modeTitle = 'Kelimeler';
 
   @override
   void initState() {
     super.initState();
-    _init();
   }
 
-  Future<void> _init() async {
-    final loaded = await _repo.loadAll();
-    final repeat = await _storage.loadRepeatSet();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didReadArgs) return;
+    _didReadArgs = true;
+
+    // Route arguments'ı al
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    _mode = args?['mode'] ?? 'sequential';
+    _level = args?['level'];
+
+    // Mod başlığını belirle
+    _setModeTitle();
+
+    // Veriyi yükle
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
     setState(() {
-      _words = loaded;
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final loaded = await _repo.loadAll();
+      final repeat = await _storage.loadRepeatSet();
+      _allWords = loaded;
       _repeatSet = repeat;
+      _prepareWords();
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _setModeTitle() {
+    switch (_mode) {
+      case 'sequential':
+        _modeTitle = 'Kelimeler (Sıralı)';
+        break;
+      case 'random':
+        if (_level == null) {
+          _modeTitle = 'Genel Rastgele';
+        } else {
+          _modeTitle = 'Seviye Bazlı Rastgele ($_level)';
+        }
+        break;
+    }
+  }
+
+  void _prepareWords() {
+    // Sıralı mod için hızlı yol - filtreleme yok
+    if (_mode == 'sequential' && _level == null) {
+      setState(() {
+        _filteredWords = _allWords;
+      });
+      return;
+    }
+    
+    List<Word> words = List.from(_allWords);
+    
+    // Seviye filtreleme
+    if (_level != null) {
+      words = words.where((word) => word.levels.contains(_level)).toList();
+    }
+    
+    // Rastgele mod için karıştır
+    if (_mode == 'random') {
+      words.shuffle(Random());
+    }
+    
+    setState(() {
+      _filteredWords = words;
     });
   }
 
   Future<void> _mark({required bool known}) async {
-    if (!known) _repeatSet.add(_index);
+    // Tekrar listesine ekleme - orijinal indeksi kullan
+    if (!known) {
+      final originalIndex = _allWords.indexOf(_filteredWords[_index]);
+      if (originalIndex != -1) {
+        _repeatSet.add(originalIndex);
+      }
+    }
     await _storage.saveRepeatSet(_repeatSet);
 
-    if (_index >= _words.length - 1) {
+    if (_index >= _filteredWords.length - 1) {
       _showEndDialog();
       return;
     }
@@ -80,15 +167,77 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_words.isEmpty) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: Text(_modeTitle)),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(
+                _mode == 'sequential' && _level == null
+                    ? 'Kelimeler yükleniyor...'
+                    : _level != null 
+                        ? '$_level seviyesindeki kelimeler hazırlanıyor...'
+                        : '3000 kelime hazırlanıyor...',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              if (_mode != 'sequential' || _level != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Bu işlem birkaç saniye sürebilir',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).hintColor,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
     }
 
-    final w = _words[_index];
+    if (_error != null) {
+      return Scaffold(
+        appBar: AppBar(title: Text(_modeTitle)),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Bir hata oluştu', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).hintColor)),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: _loadData,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Tekrar Dene'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_filteredWords.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: Text(_modeTitle)),
+        body: const Center(
+          child: Text('Bu mod için gösterilecek kelime bulunamadı.'),
+        ),
+      );
+    }
+
+    final w = _filteredWords[_index];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Flashcards'),
+        title: Text(_modeTitle),
         actions: [
           IconButton(
             tooltip: 'Tekrar Listesi',
@@ -99,49 +248,67 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Kart: ${_index + 1}/${_words.length}'),
-                Text('Tekrar: ${_repeatSet.length}'),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: Center(
-                child: Flashcard(
-                  front: _FrontFace(text: w.en),
-                  back: _BackFace(word: w),
-                  flipped: _flipped,
-                  onTap: () => setState(() => _flipped = !_flipped),
+
+      // Kart alanı
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Kart: ${_index + 1}/${_filteredWords.length}'),
+                  Text('Tekrar: ${_repeatSet.length}'),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: Center(
+                  child: Flashcard(
+                    front: _FrontFace(text: w.en),
+                    back: _BackFace(word: w),
+                    flipped: _flipped,
+                    onTap: () => setState(() => _flipped = !_flipped),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _mark(known: false),
-                    icon: const Icon(Icons.close),
-                    label: const Text('Bilmiyorum'),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+
+      // Alt butonlar
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.only(bottom: 12),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _mark(known: false),
+                  icon: const Icon(Icons.close),
+                  label: const Text('Bilmiyorum'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(56),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: () => _mark(known: true),
-                    icon: const Icon(Icons.check),
-                    label: const Text('Biliyorum'),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: () => _mark(known: true),
+                  icon: const Icon(Icons.check),
+                  label: const Text('Biliyorum'),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(56),
                   ),
                 ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -175,14 +342,16 @@ class _BackFace extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tr = word.tr ?? '';
-    final ex = word.example ?? '';
+    final tr = (word.tr ?? '').trim();
+    final ex = (word.example ?? '').trim();
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (tr.isNotEmpty)
           Text(
             tr,
+            textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
           )
         else
