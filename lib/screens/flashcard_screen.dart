@@ -251,31 +251,41 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
 
       // Kart alanı
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isTablet = constraints.maxWidth >= 600;
+            final maxCardWidth = isTablet ? 500.0 : double.infinity;
+            
+            return Padding(
+              padding: EdgeInsets.all(isTablet ? 24 : 16),
+              child: Column(
                 children: [
-                  Text('Kart: ${_index + 1}/${_filteredWords.length}'),
-                  Text('Tekrar: ${_repeatSet.length}'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Kart: ${_index + 1}/${_filteredWords.length}'),
+                      Text('Tekrar: ${_repeatSet.length}'),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: maxCardWidth),
+                        child: Flashcard(
+                          front: _FrontFace(text: w.en),
+                          back: _BackFace(word: w),
+                          flipped: _flipped,
+                          onTap: () => setState(() => _flipped = !_flipped),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                 ],
               ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: Center(
-                  child: Flashcard(
-                    front: _FrontFace(text: w.en),
-                    back: _BackFace(word: w),
-                    flipped: _flipped,
-                    onTap: () => setState(() => _flipped = !_flipped),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
+            );
+          },
         ),
       ),
 
