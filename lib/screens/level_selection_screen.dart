@@ -11,111 +11,177 @@ class LevelSelectionScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Başlık
-            const Text(
-              'Hangi Seviyedeki Kelimeleri Çalışmak İstiyorsunuz?',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Seviyenizi seçin ve o seviyedeki kelimelerden rastgele çalışın',
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).hintColor,
-              ),
-            ),
-            const SizedBox(height: 24),
-            
-            // Seviye kartları
-            Expanded(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isTablet = constraints.maxWidth >= 600;
+          
+          return SafeArea(
+            child: Padding(
+              padding: EdgeInsets.all(isTablet ? 24 : 16),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // İlk satır
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _buildLevelCard(
-                            context: context,
-                            level: 'A1',
-                            title: 'Başlangıç',
-                            description: 'Temel kelimeler',
-                            color: Colors.green,
-                            onTap: () => _navigateToStudy(context, 'A1'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildLevelCard(
-                            context: context,
-                            level: 'A2',
-                            title: 'Temel',
-                            description: 'Günlük kelimeler',
-                            color: Colors.lightGreen,
-                            onTap: () => _navigateToStudy(context, 'A2'),
-                          ),
-                        ),
-                      ],
+                  // Başlık
+                  Text(
+                    'Hangi Seviyedeki Kelimeleri Çalışmak İstiyorsunuz?',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  // İkinci satır
+                  const SizedBox(height: 8),
+                  Text(
+                    'Seviyenizi seçin ve o seviyedeki kelimelerden rastgele çalışın',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Seviye kartları - responsive
                   Expanded(
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _buildLevelCard(
-                            context: context,
-                            level: 'B1',
-                            title: 'Orta',
-                            description: 'İş ve sosyal',
-                            color: Colors.orange,
-                            onTap: () => _navigateToStudy(context, 'B1'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildLevelCard(
-                            context: context,
-                            level: 'B2',
-                            title: 'Orta Üst',
-                            description: 'Akademik temel',
-                            color: Colors.deepOrange,
-                            onTap: () => _navigateToStudy(context, 'B2'),
-                          ),
-                        ),
-                      ],
+                    child: isTablet
+                        ? _buildTabletLayout(context)
+                        : _buildMobileLayout(context),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Tüm Seviyeler Butonu
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _navigateToStudy(context, null),
+                      icon: const Icon(Icons.all_inclusive),
+                      label: const Text('Tüm Seviyeler'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: BorderSide(color: Theme.of(context).primaryColor),
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            
-            const SizedBox(height: 16),
-            
-            // Tüm Seviyeler Butonu
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => _navigateToStudy(context, null),
-                icon: const Icon(Icons.all_inclusive),
-                label: const Text('Tüm Seviyeler'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  side: BorderSide(color: Theme.of(context).primaryColor),
-                ),
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
+
+  Widget _buildMobileLayout(BuildContext context) {
+    return Column(
+      children: [
+        // İlk satır
+        Expanded(
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildLevelCard(
+                  context: context,
+                  level: 'A1',
+                  title: 'Başlangıç',
+                  description: 'Temel kelimeler',
+                  color: Colors.green,
+                  onTap: () => _navigateToStudy(context, 'A1'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildLevelCard(
+                  context: context,
+                  level: 'A2',
+                  title: 'Temel',
+                  description: 'Günlük kelimeler',
+                  color: Colors.lightGreen,
+                  onTap: () => _navigateToStudy(context, 'A2'),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        // İkinci satır
+        Expanded(
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildLevelCard(
+                  context: context,
+                  level: 'B1',
+                  title: 'Orta',
+                  description: 'İş ve sosyal',
+                  color: Colors.orange,
+                  onTap: () => _navigateToStudy(context, 'B1'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildLevelCard(
+                  context: context,
+                  level: 'B2',
+                  title: 'Orta Üst',
+                  description: 'Akademik temel',
+                  color: Colors.deepOrange,
+                  onTap: () => _navigateToStudy(context, 'B2'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTabletLayout(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildLevelCard(
+            context: context,
+            level: 'A1',
+            title: 'Başlangıç',
+            description: 'Temel kelimeler',
+            color: Colors.green,
+            onTap: () => _navigateToStudy(context, 'A1'),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildLevelCard(
+            context: context,
+            level: 'A2',
+            title: 'Temel',
+            description: 'Günlük kelimeler',
+            color: Colors.lightGreen,
+            onTap: () => _navigateToStudy(context, 'A2'),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildLevelCard(
+            context: context,
+            level: 'B1',
+            title: 'Orta',
+            description: 'İş ve sosyal',
+            color: Colors.orange,
+            onTap: () => _navigateToStudy(context, 'B1'),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildLevelCard(
+            context: context,
+            level: 'B2',
+            title: 'Orta Üst',
+            description: 'Akademik temel',
+            color: Colors.deepOrange,
+            onTap: () => _navigateToStudy(context, 'B2'),
+          ),
+        ),
+      ],
+    );
+  }
+
 
   Widget _buildLevelCard({
     required BuildContext context,
